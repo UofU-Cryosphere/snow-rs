@@ -1,0 +1,14 @@
+name: snow-rs
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - dask
+  - dask-jobqueue
+  - gdal
+  - h5py
+  - netCDF4
+  - pip
+  - python
+  - xarray
+  - zarr
