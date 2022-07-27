@@ -46,9 +46,9 @@ def argument_parser():
     )
     parser.add_argument(
         '--t-srs',
+        required=True,
         type=str,
-        default='EPSG:32613',
-        help='Target EPSG. Default: EPSG:32613'
+        help='Target EPSG. Example: EPSG:4326'
     )
     parser = add_dask_options(parser)
     parser = add_water_year_option(parser)

@@ -6,7 +6,10 @@ from a MODIS gap-filled product.
 ### Sample call:
 
 ```shell
-variable_from_modis --source-dir /data/iSnobal/MODIS_albedo --water-year 2018 --variable albedo_observed_muZ
+variable_from_modis --source-dir /data/MODIS_files \ 
+                    --water-year 2018 \
+                    --t-srs EPSG:4326
+                    --variable albedo_observed_muZ
 ```
 
 ### Data required
