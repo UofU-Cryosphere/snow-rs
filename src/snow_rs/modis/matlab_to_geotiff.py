@@ -1,8 +1,6 @@
-from contextlib import contextmanager
-
 import h5py
 import numpy as np
-from osgeo import gdal, gdalconst, gdalnumeric
+from osgeo import gdal, gdalconst, gdal_array
 
 from snow_rs.lib import ModisGeoTiff
 
@@ -27,19 +25,22 @@ BAND_NO_DATA_VALUE = 65535
 BAND_NUMBER = 1
 
 
-@contextmanager
 def matlab_file(data_dir, date):
-    file = h5py.File(
-        data_dir.joinpath('{date:%Y}', MODIS_MATLAB_FILE)
-            .as_posix().format(date=date)
-    )
+    source_file = data_dir.joinpath(MODIS_MATLAB_FILE.format(date=date))
 
-    yield file
-
-    del file
+    if source_file.exists():
+        return source_file
+    else:
+        print(f"WARNING:\n  {source_file.as_posix()} \n  does not exist.")
+        return None
 
 
 def matlab_to_geotiff(source_dir, output_dir, template_file, date, variable):
+    source_file = matlab_file(source_dir, date)
+
+    if source_file is None:
+        return None
+
     file_name = output_dir.joinpath(
         GTIFF_FILE.format(date=date, key=variable)
     ).as_posix()
@@ -56,14 +57,16 @@ def matlab_to_geotiff(source_dir, output_dir, template_file, date, variable):
     modis_band = geo_tiff.GetRasterBand(BAND_NUMBER)
     modis_band.SetNoDataValue(BAND_NO_DATA_VALUE)
 
-    with matlab_file(source_dir, date) as file:
-        gdalnumeric.BandWriteArray(modis_band, np.array(file[variable]).T)
+    source_file = h5py.File(source_file.as_posix())
+    gdal_array.BandWriteArray(
+        modis_band, np.array(source_file[variable]).T
+    )
 
-        modis_band.ComputeStatistics(0)
-        modis_band.FlushCache()
+    modis_band.ComputeStatistics(0)
+    modis_band.FlushCache()
 
-        del modis_band
-
+    del source_file
+    del modis_band
     del geo_tiff
 
     return file_name

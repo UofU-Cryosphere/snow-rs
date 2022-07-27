@@ -10,5 +10,3 @@ dependencies:
   - netCDF4
   - pip
   - python
-  - xarray
-  - zarr
