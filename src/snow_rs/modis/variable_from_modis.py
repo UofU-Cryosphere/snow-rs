@@ -22,11 +22,12 @@ class ConversionConfig(NamedTuple):
     output_dir: Path
     modis_us: ModisGeoTiff
     target_srs: str
+    convert_to_zarr: bool
 
 
 def argument_parser():
     parser = argparse.ArgumentParser(
-        description='Convert matlab files to zarr',
+        description='Convert matlab files to a GeoTiff',
     )
 
     parser.add_argument(
@@ -46,9 +47,14 @@ def argument_parser():
     )
     parser.add_argument(
         '--t-srs',
-        required=True,
         type=str,
-        help='Target EPSG. Example: EPSG:4326'
+        help='When given, creates a GDAL-VRT file with that reference system.'
+             ' Example: EPSG:4326'
+    )
+    parser.add_argument(
+        '--convert-to-zarr',
+        action='store_true',
+        help='Convert output files to zarr format.'
     )
     parser = add_dask_options(parser)
     parser = add_water_year_option(parser)
@@ -57,15 +63,16 @@ def argument_parser():
 
 
 def config_for_arguments(arguments):
-    output_dir = arguments.source_dir / f'wy{arguments.water_year}-zarr/'
+    output_dir = arguments.source_dir / f'wy{arguments.water_year}/'
     output_dir.mkdir(exist_ok=True)
 
     return ConversionConfig(
         variable=arguments.variable,
-        source_dir=arguments.source_dir,
+        source_dir=arguments.source_dir / str(arguments.water_year),
         output_dir=output_dir,
         modis_us=ModisGeoTiff(arguments.source_dir),
-        target_srs=arguments.t_srs
+        target_srs=arguments.t_srs,
+        convert_to_zarr=arguments.convert_to_zarr
     )
 
 
@@ -85,8 +92,13 @@ def write_date(date, config):
         date,
         config.variable,
     )
-    file = warp_to(file, config.target_srs)
-    write_zarr(file, date, config.variable, config.output_dir)
+
+    if file is not None:
+        if config.target_srs:
+            file = warp_to(file, config.target_srs)
+
+        if config.convert_to_zarr:
+            write_zarr(file, date, config.variable, config.output_dir)
 
 
 def main():
