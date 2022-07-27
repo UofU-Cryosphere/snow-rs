@@ -10,7 +10,6 @@ from snow_rs.lib import ModisGeoTiff
 from snow_rs.lib.command_line_helpers import add_dask_options, \
     add_water_year_option
 from snow_rs.lib.dask_utils import run_with_client
-from snow_rs.modis.geotiff_to_zarr import write_zarr
 from snow_rs.modis.matlab_to_geotiff import matlab_to_geotiff, warp_to
 
 ONE_DAY = timedelta(days=1)
@@ -22,7 +21,6 @@ class ConversionConfig(NamedTuple):
     output_dir: Path
     modis_us: ModisGeoTiff
     target_srs: str
-    convert_to_zarr: bool
 
 
 def argument_parser():
@@ -51,11 +49,7 @@ def argument_parser():
         help='When given, creates a GDAL-VRT file with that reference system.'
              ' Example: EPSG:4326'
     )
-    parser.add_argument(
-        '--convert-to-zarr',
-        action='store_true',
-        help='Convert output files to zarr format.'
-    )
+
     parser = add_dask_options(parser)
     parser = add_water_year_option(parser)
 
@@ -72,7 +66,6 @@ def config_for_arguments(arguments):
         output_dir=output_dir,
         modis_us=ModisGeoTiff(arguments.source_dir),
         target_srs=arguments.t_srs,
-        convert_to_zarr=arguments.convert_to_zarr
     )
 
 
@@ -93,12 +86,8 @@ def write_date(date, config):
         config.variable,
     )
 
-    if file is not None:
-        if config.target_srs:
-            file = warp_to(file, config.target_srs)
-
-        if config.convert_to_zarr:
-            write_zarr(file, date, config.variable, config.output_dir)
+    if file is not None and config.target_srs:
+        warp_to(file, config.target_srs)
 
 
 def main():
