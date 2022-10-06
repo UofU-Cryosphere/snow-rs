@@ -10,7 +10,6 @@ from snow_rs.lib import ModisGeoTiff
 from snow_rs.lib.command_line_helpers import add_dask_options, \
     add_water_year_option
 from snow_rs.lib.dask_utils import run_with_client
-from snow_rs.modis.geotiff_to_zarr import write_zarr
 from snow_rs.modis.matlab_to_geotiff import matlab_to_geotiff, warp_to
 
 ONE_DAY = timedelta(days=1)
@@ -26,7 +25,8 @@ class ConversionConfig(NamedTuple):
 
 def argument_parser():
     parser = argparse.ArgumentParser(
-        description='Convert matlab files to zarr',
+        description='Convert matlab files to a GeoTiff',
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     parser.add_argument(
@@ -35,7 +35,8 @@ def argument_parser():
         type=Path,
         help='Base directory. The files to convert are expected to be in a '
              'folder with the water year. Example: 2018'
-             ' Other required file expected under this folder is the template '
+             '\n'
+             'Other required file expected under this folder is the template '
              f'MODIS file with name: {ModisGeoTiff.WESTERN_US_TEMPLATE}',
     )
     parser.add_argument(
@@ -47,9 +48,10 @@ def argument_parser():
     parser.add_argument(
         '--t-srs',
         type=str,
-        default='EPSG:32613',
-        help='Target EPSG. Default: EPSG:32613'
+        help='When given, creates a GDAL-VRT file with that reference system.'
+             ' Example: EPSG:4326'
     )
+
     parser = add_dask_options(parser)
     parser = add_water_year_option(parser)
 
@@ -57,15 +59,15 @@ def argument_parser():
 
 
 def config_for_arguments(arguments):
-    output_dir = arguments.source_dir / f'wy{arguments.water_year}-zarr/'
+    output_dir = arguments.source_dir / f'wy{arguments.water_year}/'
     output_dir.mkdir(exist_ok=True)
 
     return ConversionConfig(
         variable=arguments.variable,
-        source_dir=arguments.source_dir,
+        source_dir=arguments.source_dir / str(arguments.water_year),
         output_dir=output_dir,
         modis_us=ModisGeoTiff(arguments.source_dir),
-        target_srs=arguments.t_srs
+        target_srs=arguments.t_srs,
     )
 
 
@@ -85,8 +87,9 @@ def write_date(date, config):
         date,
         config.variable,
     )
-    file = warp_to(file, config.target_srs)
-    write_zarr(file, date, config.variable, config.output_dir)
+
+    if file is not None and config.target_srs:
+        warp_to(file, config.target_srs)
 
 
 def main():
