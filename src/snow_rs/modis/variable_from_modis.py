@@ -26,6 +26,7 @@ class ConversionConfig(NamedTuple):
 def argument_parser():
     parser = argparse.ArgumentParser(
         description='Convert matlab files to a GeoTiff',
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     parser.add_argument(
@@ -34,7 +35,8 @@ def argument_parser():
         type=Path,
         help='Base directory. The files to convert are expected to be in a '
              'folder with the water year. Example: 2018'
-             ' Other required file expected under this folder is the template '
+             '\n'
+             'Other required file expected under this folder is the template '
              f'MODIS file with name: {ModisGeoTiff.WESTERN_US_TEMPLATE}',
     )
     parser.add_argument(
