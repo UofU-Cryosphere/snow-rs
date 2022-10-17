@@ -1,12 +1,11 @@
-from dataclasses import dataclass, field, InitVar
-from pathlib import PurePath
+from dataclasses import dataclass, field
+from importlib.resources import files
 
 from osgeo import gdal, gdalconst
 
 
 @dataclass
 class ModisGeoTiff:
-    data_dir: InitVar[PurePath] = None
     x_size: int = field(init=False)
     y_size: int = field(init=False)
     geo_transform: tuple = field(init=False)
@@ -17,13 +16,14 @@ class ModisGeoTiff:
 
     WESTERN_US_TEMPLATE = 'WesternUS.tif'
 
-    def __post_init__(self, data_dir):
-        self.__load_template_data(data_dir)
+    def __post_init__(self):
+        self.__load_template_data()
 
-    def __load_template_data(self, data_dir):
-        data_dir = PurePath(data_dir)
+    def __load_template_data(self):
         template = gdal.Open(
-            data_dir.joinpath(self.WESTERN_US_TEMPLATE).as_posix(),
+            files('snow_rs').joinpath(
+                f'data/modis/{self.WESTERN_US_TEMPLATE}'
+            ).as_posix(),
             gdalconst.GA_ReadOnly
         )
 
