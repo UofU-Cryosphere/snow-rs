@@ -36,8 +36,6 @@ def argument_parser():
         help='Base directory. The files to convert are expected to be in a '
              'folder with the water year. Example: 2018'
              '\n'
-             'Other required file expected under this folder is the template '
-             f'MODIS file with name: {ModisGeoTiff.WESTERN_US_TEMPLATE}',
     )
     parser.add_argument(
         '--variable',
@@ -66,7 +64,7 @@ def config_for_arguments(arguments):
         variable=arguments.variable,
         source_dir=arguments.source_dir / str(arguments.water_year),
         output_dir=output_dir,
-        modis_us=ModisGeoTiff(arguments.source_dir),
+        modis_us=ModisGeoTiff(),
         target_srs=arguments.t_srs,
     )
 

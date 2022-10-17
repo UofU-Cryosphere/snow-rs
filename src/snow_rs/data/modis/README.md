@@ -1,6 +1,6 @@
 ## MODIS
 
-The `WesternUS` template consists of the following original MODIS tiles:
+The `WesternUS.tif` template consists of the following original MODIS tiles:
 
 * h08v04
 * h09v04
