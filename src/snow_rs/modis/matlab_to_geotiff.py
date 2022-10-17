@@ -4,8 +4,7 @@ from osgeo import gdal, gdalconst, gdal_array
 
 from snow_rs.lib import ModisGeoTiff
 
-MODIS_MATLAB_FILE = "westernUS_Terra_{date:%Y%m%d}_mindays10_minthresh05_" \
-                    "ndsimin0.00_zthresh08000800.mat"
+MODIS_MATLAB_FILE = "*{date:%Y%m%d}*.mat"
 
 OUTPUT_FILE = 'WesternUS_{date:%Y%m%d}_{key}'
 
@@ -26,12 +25,12 @@ BAND_NUMBER = 1
 
 
 def matlab_file(data_dir, date):
-    source_file = data_dir.joinpath(MODIS_MATLAB_FILE.format(date=date))
+    source_file = list(data_dir.glob(MODIS_MATLAB_FILE.format(date=date)))
 
-    if source_file.exists():
-        return source_file
+    if len(source_file) > 0:
+        return source_file[0]
     else:
-        print(f"WARNING:\n  {source_file.as_posix()} \n  does not exist.")
+        print(f"WARNING:\n  source file for {date.date()} \n  does not exist.")
         return None
 
 
