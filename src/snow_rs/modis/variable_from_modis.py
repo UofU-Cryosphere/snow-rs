@@ -37,42 +37,67 @@ def argument_parser():
              'folder with the water year. Example: 2018'
              '\n'
     )
+    
+    parser.add_argument(
+        '--calendar_year_src_dir',
+        action='store_true',
+        help='Set flag if source directory is NOT in water-year format '
+             'This will assume "water year" arg within src dir includes '
+             'calendar year dates.'
+             '\n'
+    )
+    
+    parser.add_argument(
+        '--output-dir',
+        required=True,
+        type=Path,
+        help='Output directory. Where coverted files are saved.'
+             '\n'
+    )
+    
     parser.add_argument(
         '--variable',
         required=True,
         type=str,
         help='Variable to extract from the matlab files'
     )
+    
     parser.add_argument(
         '--t-srs',
         type=str,
         help='When given, creates a GDAL-VRT file with that reference system.'
              ' Example: EPSG:4326'
     )
+    
 
     parser = add_dask_options(parser)
     parser = add_water_year_option(parser)
+    
+    parser.set_defaults(calendar_year_src_dir=False)
 
     return parser
 
 
 def config_for_arguments(arguments):
-    output_dir = arguments.source_dir / f'wy{arguments.water_year}/'
-    output_dir.mkdir(exist_ok=True)
-
     return ConversionConfig(
         variable=arguments.variable,
         source_dir=arguments.source_dir / str(arguments.water_year),
-        output_dir=output_dir,
+        output_dir=arguments.output_dir,
         modis_us=ModisGeoTiff(),
         target_srs=arguments.t_srs,
     )
 
 
-def date_range(water_year):
-    d0 = datetime(water_year - 1, 9, 30)
-    d1 = datetime(water_year, 10, 1)
-
+def date_range(water_year, calendar_date_format):
+    if calendar_date_format == True:
+        # use standard calendar date format
+        d0 = datetime(water_year, 1, 1)
+        d1 = datetime(water_year, 12, 31)  
+    elif calendar_date_format == False:
+        # use wy formatting
+        d0 = datetime(water_year - 1, 9, 30)
+        d1 = datetime(water_year, 10, 1)
+        
     return np.arange(d0, d1, ONE_DAY).astype(datetime)
 
 
@@ -102,7 +127,7 @@ def main():
         config = config_for_arguments(arguments)
         files = [
             write_date(date, config)
-            for date in date_range(arguments.water_year)
+            for date in date_range(arguments.water_year, arguments.calendar_year_src_dir)
         ]
         dask.compute(files)
 
