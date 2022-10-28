@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
+import time
 
 from dask.distributed import Client
 
@@ -52,4 +53,5 @@ def run_with_client(cores, memory):
     try:
         yield client
     finally:
+        time.sleep(4)
         client.close()
