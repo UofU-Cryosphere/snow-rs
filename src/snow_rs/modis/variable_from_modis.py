@@ -7,8 +7,7 @@ import dask
 import numpy as np
 
 from snow_rs.lib import ModisGeoTiff
-from snow_rs.lib.command_line_helpers import add_dask_options, \
-    add_water_year_option
+from snow_rs.lib.command_line_helpers import add_dask_options
 from snow_rs.lib.dask_utils import run_with_client
 from snow_rs.modis.matlab_to_geotiff import matlab_to_geotiff, warp_to
 
@@ -19,6 +18,8 @@ class ConversionConfig(NamedTuple):
     variable: str
     source_dir: Path
     output_dir: Path
+    year_format: str
+    year: int
     modis_us: ModisGeoTiff
     target_srs: str
 
@@ -34,25 +35,33 @@ def argument_parser():
         required=True,
         type=Path,
         help='Base directory. The files to convert are expected to be in a '
-             'folder with the water year. Example: 2018'
+             'folder with the year. Example: 2018'
              '\n'
     )
-    
-    parser.add_argument(
-        '--calendar_year_src_dir',
-        action='store_true',
-        help='Set flag if source directory is NOT in water-year format '
-             'This will assume "water year" arg within src dir includes '
-             'calendar year dates.'
-             '\n'
-    )
-    
+
     parser.add_argument(
         '--output-dir',
         required=True,
         type=Path,
         help='Output directory. Where coverted files are saved.'
              '\n'
+    )
+
+    parser.add_argument(
+        '--year-format',
+        required=True,
+        type=str,
+        choices=['calendar', 'water'],
+        help='Choose formating of input direcetory. Determines the foramtting '
+             'of the date range to process.'
+             '\n'
+    )
+
+    parser.add_argument(
+        '--year',
+        required=True,
+        type=int,
+        help='Determines the date range to process'
     )
     
     parser.add_argument(
@@ -68,35 +77,33 @@ def argument_parser():
         help='When given, creates a GDAL-VRT file with that reference system.'
              ' Example: EPSG:4326'
     )
-    
 
     parser = add_dask_options(parser)
-    parser = add_water_year_option(parser)
     
-    parser.set_defaults(calendar_year_src_dir=False)
-
     return parser
 
 
 def config_for_arguments(arguments):
     return ConversionConfig(
         variable=arguments.variable,
-        source_dir=arguments.source_dir / str(arguments.water_year),
+        source_dir=arguments.source_dir / str(arguments.year),
         output_dir=arguments.output_dir,
+        year_format=arguments.year_format,
+        year=arguments.year,
         modis_us=ModisGeoTiff(),
         target_srs=arguments.t_srs,
     )
 
 
-def date_range(water_year, calendar_date_format):
-    if calendar_date_format == True:
+def date_range(year, date_format):
+    if date_format == 'calendar':
         # use standard calendar date format
-        d0 = datetime(water_year, 1, 1)
-        d1 = datetime(water_year, 12, 31)  
-    elif calendar_date_format == False:
-        # use wy formatting
-        d0 = datetime(water_year - 1, 9, 30)
-        d1 = datetime(water_year, 10, 1)
+        d0 = datetime(year, 1, 1)
+        d1 = datetime(year, 12, 31)  
+    elif date_format == 'water':
+        # use water-year formatting
+        d0 = datetime(year - 1, 9, 30)
+        d1 = datetime(year, 10, 1)
         
     return np.arange(d0, d1, ONE_DAY).astype(datetime)
 
@@ -123,11 +130,16 @@ def main():
             f'Given source folder does not exist: {arguments.source_dir}'
         )
 
+    if not arguments.output_dir.exists():
+        raise IOError(
+            f'Given output folder does not exist: {arguments.output_dir}'
+        )
+
     with run_with_client(arguments.cores, arguments.memory):
         config = config_for_arguments(arguments)
         files = [
             write_date(date, config)
-            for date in date_range(arguments.water_year, arguments.calendar_year_src_dir)
+            for date in date_range(arguments.year, arguments.year_format)
         ]
         dask.compute(files)
 

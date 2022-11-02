@@ -53,5 +53,4 @@ def run_with_client(cores, memory):
     try:
         yield client
     finally:
-        time.sleep(4)
         client.close()
