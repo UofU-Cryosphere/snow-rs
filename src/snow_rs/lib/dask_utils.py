@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 from pathlib import Path
-
 from dask.distributed import Client
 
 CHPC = 'chpc' in str(Path.home())

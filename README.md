@@ -43,8 +43,10 @@ given variable. The source files are expected to as unprojected Matlab files.
 
 ```shell
 variable_from_modis --source-dir /data/MODIS_files \ 
-                    --water-year 2018 \
-                    --t-srs EPSG:4326
+                    --output-dir /your/output/dir \
+                    --year 2018 \
+                    ---year-format water \
+                    --t-srs EPSG:4326 \
                     --variable albedo_observed_muZ
 ```
 
