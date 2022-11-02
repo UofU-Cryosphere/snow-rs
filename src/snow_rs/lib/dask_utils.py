@@ -1,7 +1,5 @@
 from contextlib import contextmanager
 from pathlib import Path
-import time
-
 from dask.distributed import Client
 
 CHPC = 'chpc' in str(Path.home())
