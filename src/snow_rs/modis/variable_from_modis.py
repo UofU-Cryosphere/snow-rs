@@ -52,7 +52,7 @@ def argument_parser():
         required=True,
         type=str,
         choices=['calendar', 'water'],
-        help='Choose formating of input direcetory. Determines the foramtting '
+        help='Choose formating of input direcetory. Determines the formatting '
              'of the date range to process.'
              '\n'
     )
@@ -99,7 +99,7 @@ def date_range(year, date_format):
     if date_format == 'calendar':
         # use standard calendar date format
         d0 = datetime(year, 1, 1)
-        d1 = datetime(year, 12, 31)  
+        d1 = datetime(year + 1, 1, 1)  
     elif date_format == 'water':
         # use water-year formatting
         d0 = datetime(year - 1, 9, 30)
